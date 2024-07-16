@@ -1,9 +1,13 @@
 from http import HTTPStatus
 
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from news.models import News
+from news.models import Comment, News
+
+
+User = get_user_model()
 
 
 class TestRoutes(TestCase):
@@ -11,16 +15,15 @@ class TestRoutes(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.news = News.objects.create(title='Заголовок', text='Текст')
-
-    # def test_home_page(self):
-    #     url = reverse('news:home')
-    #     response = self.client.get(url)
-    #     self.assertEqual(response.status_code, HTTPStatus.OK)
-
-    # def test_detail_page(self):
-    #     url = reverse('news:detail', args=(self.news.pk,))
-    #     response = self.client.get(url)
-    #     self.assertEqual(response.status_code, HTTPStatus.OK)
+        # Создаём двух пользователей с разными иминами:
+        cls.author = User.objects.create(username='Лев Толстой')
+        cls.reader = User.objects.create(username='Читатель Простой')
+        # От имени первого пользователя создаём комментарий к новости:
+        cls.comment = Comment.objects.create(
+            news=cls.news,
+            author=cls.author,
+            text='Текст комментария'
+        )
 
     def test_pages_availability(self):
         # Создаём набор тестовых данных - кортеж кортежей.
@@ -50,3 +53,19 @@ class TestRoutes(TestCase):
                 url = reverse(name, args=args)
                 response = self.client.get(url)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
+
+    def test_availability_for_comment_edit_nd_delete(self):
+        user_statuses = (
+            (TestRoutes.author, HTTPStatus.OK),
+            (TestRoutes.reader, HTTPStatus.NOT_FOUND),
+        )
+        for user, status in user_statuses:
+            # Логиним пользователя в клиенте:
+            self.client.force_login(user)
+            # Для кождой пары "пользователь - ожидаемый ответ"
+            # перебераем имена тестируемых страниц:
+            for name in ('news:edit', 'news:delete'):
+                with self.subTest(user=user, name=name):
+                    url = reverse(name, args=(self.comment.pk,))
+                    response = self.client.get(url)
+                    self.assertEqual(response.status_code, status)
