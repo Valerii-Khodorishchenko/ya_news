@@ -6,6 +6,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
+from news.forms import CommentForm
 from news.models import Comment, News
 
 User = get_user_model()
@@ -95,3 +96,15 @@ class TestDetailPage(TestCase):
         sorted_timestamps = sorted(all_timestamps)
         # Проверяем, что временные метки отсоритрованы правильно.
         self.assertEqual(all_timestamps, sorted_timestamps)
+
+    def test_anonymous_client_has_no_form(self):
+        response = self.client.get(TestDetailPage.detail_url)
+        self.assertNotIn('form', response.context)
+
+    def test_authorized_client_has_form(self):
+        # Авторизуем клиента при помощи ранее созданного пользователя.
+        self.client.force_login(TestDetailPage.author)
+        response = self.client.get(TestDetailPage.detail_url)
+        self.assertIn('form', response.context)
+        # Проверим, что объект формы соответствует нужному классу формы.
+        self.assertIsInstance(response.context['form'], CommentForm)
