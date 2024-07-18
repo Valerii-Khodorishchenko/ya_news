@@ -54,7 +54,7 @@ class TestRoutes(TestCase):
                 response = self.client.get(url)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
 
-    def test_availability_for_comment_edit_nd_delete(self):
+    def test_availability_for_comment_edit_and_delete(self):
         user_statuses = (
             (TestRoutes.author, HTTPStatus.OK),
             (TestRoutes.reader, HTTPStatus.NOT_FOUND),
