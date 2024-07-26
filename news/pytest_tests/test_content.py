@@ -1,9 +1,9 @@
 import pytest
-from django.urls import reverse
 from django.conf import settings
-
+from django.urls import reverse
 
 from news.forms import CommentForm
+
 
 @pytest.mark.django_db
 def test_news_count(client, list_news):
@@ -39,19 +39,6 @@ def test_comment_order(client, news_for_args, list_comments):
     all_timestamps = [comment.created for comment in news.comment_set.all()]
     assert all_timestamps == sorted(all_timestamps)
 
-
-# @pytest.mark.django_db
-# def test_anonymous_client_has_no_form(client, news_for_args):
-#     response = client.get(reverse('news:detail', args=news_for_args))
-#     assert 'form' not in response.context
-
-
-# @pytest.mark.django_db
-# def test_authorized_client_has_form(not_author_client, news_for_args):
-#     response = not_author_client.get(reverse('news:detail',
-#                                              args=news_for_args))
-#     assert 'form' in response.context
-#     assert isinstance(response.context['form'], CommentForm)
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(

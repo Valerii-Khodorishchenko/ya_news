@@ -13,51 +13,29 @@ User = get_user_model()
 
 
 class TestHomePage(TestCase):
-    # Вынесем ссылку на домащнюю страницу в арибуты класса.
     HOME_URL = reverse('news:home')
 
     @classmethod
     def setUpTestData(cls):
-        # Вычисляем текущую дату.
         today = datetime.today()
         News.objects.bulk_create(
             News(
                 title=f'Новость{index}',
                 text='Просто текст.',
-                # Для каждой новости уменьшаем дату на index дней от tody,
-                # где index - счётчик цикла.
                 date=today - timedelta(days=index)
             )
             for index in range(settings.NEWS_COUNT_ON_HOME_PAGE + 1)
         )
 
     def test_news_count(self):
-        # Загружаем главную страницу.
         response = self.client.get(self.HOME_URL)
-        # Код ответа не проверяем, его уже провенили в тестах маршрутов.
-        # Получаем список объектов из словаря контекста.
         object_list = response.context['object_list']
-        # news/views.py
-        # class NewsList(generic.ListView):
-        #     """Список новостей."""
-        #     model = News
-        #     template_name = 'news/home.html'
-        #     # заменяет object_list и new_list на news_feed
-        #     context_object_name = 'news_feed'
-
-        # Определяем количество записей в списке.
-        news_count = object_list.count()
-        # Проверяем что на странице именно 10 новостей.
-        self.assertEqual(news_count, settings.NEWS_COUNT_ON_HOME_PAGE)
+        self.assertEqual(object_list.count(), settings.NEWS_COUNT_ON_HOME_PAGE)
 
     def test_news_order(self):
         response = self.client.get(self.HOME_URL)
-        object_list = response.context['news_list']
-        # Получаем даты новостей в том порядке, как они выведены на странице.
-        all_danes = [news.date for news in object_list]
-        sorted_dates = sorted(all_danes, reverse=True)
-        # Проверяем, что исходный список был отсортирован правильно.
-        self.assertEqual(all_danes, sorted_dates)
+        all_danes = [news.date for news in response.context['news_list']]
+        self.assertEqual(all_danes, sorted(all_danes, reverse=True))
 
 
 class TestDetailPage(TestCase):
@@ -66,45 +44,32 @@ class TestDetailPage(TestCase):
     def setUpTestData(cls):
         cls.news = News.objects.create(title='Тестовая новость',
                                        text='Просто текст')
-        # Сохраняем в переменную адрес страницы с новостью:
         cls.detail_url = reverse('news:detail', args=(cls.news.id,))
         cls.author = User.objects.create(username='Комментатор')
-        # Запоминаем текущее время:
         now = timezone.now()
-        # Создаём комментарий в цикле.
         for index in range(10):
-            # Создаём объект и записываем его в переменную.
-            comment = Comment.objects.create(news=cls.news, author=cls.author,
-                                             text=f'Текст {index}',)
-            # Сразу после создания меняем время создания комментария.
+            comment = Comment.objects.create(
+                news=cls.news,
+                author=cls.author,
+                text=f'Текст {index}',
+            )
             comment.created = now + timedelta(days=index)
-            # И сохраняем эти изменения.
             comment.save()
 
     def test_comment_order(self):
         response = self.client.get(self.detail_url)
-        # Проверяем, что объект новости находится в словаре контекста
-        # под ожидаемым именем - названием модели.
         self.assertIn('news', response.context)
-        # Получаем объект новости.
         news = response.context['news']
-        # Получаем все коментарии к новости.
         all_comments = news.comment_set.all()
-        # Собираем временные метки всех комментариев.
         all_timestamps = [comment.created for comment in all_comments]
-        # Сортируем временные метки, менять порядок сортирвки не надо.
-        sorted_timestamps = sorted(all_timestamps)
-        # Проверяем, что временные метки отсоритрованы правильно.
-        self.assertEqual(all_timestamps, sorted_timestamps)
+        self.assertEqual(all_timestamps, sorted(all_timestamps))
 
     def test_anonymous_client_has_no_form(self):
         response = self.client.get(self.detail_url)
         self.assertNotIn('form', response.context)
 
     def test_authorized_client_has_form(self):
-        # Авторизуем клиента при помощи ранее созданного пользователя.
         self.client.force_login(self.author)
         response = self.client.get(self.detail_url)
         self.assertIn('form', response.context)
-        # Проверим, что объект формы соответствует нужному классу формы.
         self.assertIsInstance(response.context['form'], CommentForm)

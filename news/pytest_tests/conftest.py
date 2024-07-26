@@ -14,11 +14,6 @@ def author(django_user_model):
 
 
 @pytest.fixture
-def not_author(django_user_model):
-    return django_user_model.objects.create(username='Не автор')
-
-
-@pytest.fixture
 def author_client(author):
     client = Client()
     client.force_login(author)
@@ -26,9 +21,9 @@ def author_client(author):
 
 
 @pytest.fixture
-def not_author_client(not_author):
+def not_author_client(django_user_model):
     client = Client()
-    client.force_login(not_author)
+    client.force_login(django_user_model.objects.create(username='Не автор'))
     return client
 
 
@@ -89,6 +84,3 @@ def form_data():
     return {
         'text': 'Новый комментарий'
     }
-
-
-

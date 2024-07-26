@@ -12,8 +12,7 @@ def test_user_can_create_comment(author_client, author, news, news_for_args,
                                  form_data):
     """Проверяю, что пользователь может отправить комментарий."""
     url = reverse('news:detail', args=news_for_args)
-    response = author_client.post(url, data=form_data)
-    assertRedirects(response, f'{url}#comments')
+    assertRedirects(author_client.post(url, data=form_data), f'{url}#comments')
     assert Comment.objects.count() == 1
     new_news = Comment.objects.get()
     assert new_news.text == form_data['text']
@@ -25,9 +24,10 @@ def test_user_can_create_comment(author_client, author, news, news_for_args,
 def test_anonymous_user_cant_create_comment(client, news_for_args, form_data):
     """Проверяю, что анонимный пользователь не может отправить комментарий."""
     url = reverse('news:detail', args=news_for_args)
-    response = client.post(url, data=form_data)
     login_url = reverse('users:login')
-    assertRedirects(response, f'{login_url}?next={url}')
+    assertRedirects(
+        client.post(url, data=form_data), f'{login_url}?next={url}'
+    )
     assert Comment.objects.count() == 0
 
 
@@ -36,17 +36,16 @@ def test_user_cant_use_bad_words(author_client, news_for_args):
     Проверяю, что если комментарий содержит запрещённые слова, он не будет
     опубликован, а форма вернёт ошибку.
     """
-    bad_words_data = {'text': f'Какой-то текст, {BAD_WORDS[0]}, еще текст'}
     response = author_client.post(
-        reverse('news:detail', args=news_for_args), data=bad_words_data
+        reverse('news:detail', args=news_for_args),
+        data={'text': f'Какой-то текст, {BAD_WORDS[0]}, еще текст'}
     )
     assert WARNING in response.context['form'].errors['text']
     assert Comment.objects.count() == 0
 
 
-@pytest.mark.django_db
-def test_author_can_delete_comment(author_client,
-                                   comment_for_args, news_for_args):
+def test_author_can_delete_comment(author_client, comment_for_args,
+                                   news_for_args):
     """
     Проверяю, что авторизованный пользователь может удалить свой комментарий.
     """
@@ -60,7 +59,6 @@ def test_author_can_delete_comment(author_client,
     assert Comment.objects.count() == 0
 
 
-@pytest.mark.django_db
 def test_other_user_cant_delete_comment_of_another_user(not_author_client,
                                                         comment_for_args,):
     """
@@ -74,7 +72,6 @@ def test_other_user_cant_delete_comment_of_another_user(not_author_client,
     assert Comment.objects.count() == 1
 
 
-@pytest.mark.django_db
 def test_author_can_edit_comment(author_client, comment_for_args, form_data,
                                  comment, news_for_args, news, author):
     """
@@ -95,7 +92,6 @@ def test_author_can_edit_comment(author_client, comment_for_args, form_data,
     assert comment.news == news
 
 
-@pytest.mark.django_db
 def test_user_cant_edit_comment_of_author_user(not_author_client,
                                                comment_for_args,
                                                form_data, comment):
