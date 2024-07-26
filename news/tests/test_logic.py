@@ -12,7 +12,7 @@ User = get_user_model()
 
 
 class TestCommentCreation(TestCase):
-    # Текст комментария понадобится в нескольких местах кода, 
+    # Текст комментария понадобится в нескольких местах кода,
     # поэтому запишем его в атрибуты класса.
     COMMENT_TEXT = 'Текст комментария'
 
@@ -122,7 +122,7 @@ class TestCommentEditDelete(TestCase):
 
     def test_author_can_delete_comment(self):
         """Проверим, что автор может удалить свой комментарий."""
-        # От имини автора коааентария отправляем DELETE-запрос на удаление.
+        # От имини автора комментария отправляем DELETE-запрос на удаление.
         response = self.author_client.delete(self.delete_url)
         # Проверяем, что редирект привёл к разделу с комментариями.
         # Заодно проверим статус-коды ответов.
@@ -145,7 +145,7 @@ class TestCommentEditDelete(TestCase):
     def test_author_can_edit_comment(self):
         """Редактировать комментарий может только автор."""
         # Выполняем запрос на редактирование от имени автора комментария.
-        response =self.author_client.post(self.edit_url, data=self.form_data)
+        response = self.author_client.post(self.edit_url, data=self.form_data)
         # Проверяем, что сработал редирект.
         self.assertRedirects(response, self.url_to_comments)
         # Обновляем объект комментария.
@@ -153,7 +153,7 @@ class TestCommentEditDelete(TestCase):
         # Проверяем, что текст комментария соответствует обновленному.
         self.assertEqual(self.comment.text, self.NEW_COMMENT_TEXT)
 
-    def test_user_cant_edit_comment_od_author_user(self):
+    def test_user_cant_edit_comment_of_author_user(self):
         """Редактирования комментария недоступно для других пользователей."""
         # Выполняем запрос на редактирование от имени другого пользователя.
         response = self.reader_client.post(self.edit_url, data=self.form_data)
